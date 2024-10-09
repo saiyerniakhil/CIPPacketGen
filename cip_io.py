@@ -1,35 +1,30 @@
 from scapy.all import *
-from scapy.packet import bind_layers, bind_bottom_up, Packet
-from scapy.contrib.etherip import EtherIP
-import cip_fields
-
-CIP_OPTIONS = {
-
-}
-"""
-TODO: Gather the Fields 
-"""
-# class EtherNetIP(Packet):
-#     pass
+from cip_fields import CIPSegment, LogicalSegment, EPATHField
 
 
-
-"""
-A CIP MessageRouter Request has the following fields 
-    1. Service - Service Code - is in the range of `0 - 31 (hex)` 
-    2. Request Path Size -
-    3. Request Path - Sequence of CIP Path Segments 
-    4. Request Data
-"""
 class CIPMessageRouterRequest(Packet):
-    Name = 'CIPMessageRouterRequest'
+    name = 'CIPMessageRouterRequest'
     fields_desc = [
-        cip_fields.USINT("Service", 00), # Ranges from 00 - 31 (hex) hence the default value of 00
-        # [cip_fields.LogicalSegment("RequestPath")]
-        # Create a new field for epath
+        ByteField("Service", 0x00),  # Service code
+        ByteField("RequestPathSize", None),  # Will be calculated
+        EPATHField("RequestPath", []),  # List of CIPSegments
+        # Add Request Data fields if needed
     ]
-    # EtherNetIP()
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.RequestPathSize is None:
+            request_path_bytes = b"".join(raw(s) for s in self.RequestPath)
+            self.RequestPathSize = len(request_path_bytes) // 2  # Size in words (16 bits)
 
 
-cipmrr = CIPMessageRouterRequest(Service=0x24)
+# Example usage:
+cipmrr = CIPMessageRouterRequest(
+    Service=0x24,
+    RequestPath=[
+        LogicalSegment(logical_type='class_id', logical_format=1, value=0x01),
+        LogicalSegment(logical_type='instance_id', logical_format=1, value=0x01),
+    ]
+)
+raw(cipmrr)
 cipmrr.show()
