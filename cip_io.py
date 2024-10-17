@@ -17,7 +17,6 @@ class CIPMessageRouterRequest(Packet):
             request_path_bytes = b"".join(raw(s) for s in self.RequestPath)
             self.RequestPathSize = len(request_path_bytes) // 2  # Size in words (16 bits)
 
-
 # Example usage:
 cipmrr = CIPMessageRouterRequest(
     Service=0x24,
