@@ -7,7 +7,6 @@ from scapy.layers.l2 import Ether
 
 from cip_fields import CIPSegment, LogicalSegment, EPATHField
 
-
 class CIPMessageRouterRequest(Packet):
     name = 'CIP'
     fields_desc = [
@@ -23,14 +22,15 @@ class CIPMessageRouterRequest(Packet):
             request_path_bytes = b"".join(raw(s) for s in self.RequestPath)
             self.RequestPathSize = len(request_path_bytes) // 2  # Size in words (16 bits)
 
+bind_layers(ENIPSendRRData, CIPMessageRouterRequest)
 
 
-# bind_layers(ENIPTCP, ENIPSendRRData, commandId=0x006f)
-# bind_layers(ENIPSendRRData, CIPMessageRouterRequest)
+src_ip = "192.168.1.10"
+dst_ip = "192.168.1.20"
+src_port = RandShort()  # Random source port
+dst_port = 44818        # ENIP standard port
 
-cipmrr = IP(src="192.168.1.10", dst="192.168.1.20") / TCP(sport=60493,dport=44818) / ENIPTCP() / ENIPSendRRData(items=[ItemData(typeId=0x0000), ItemData(typeId=0x00B2)])
-
-cipmrr  /=   CIPMessageRouterRequest(
+cip_request = CIPMessageRouterRequest(
     Service=0x24,
     RequestPath=[
         LogicalSegment(logical_type='class_id', logical_format=1, value=0x01),
@@ -38,14 +38,23 @@ cipmrr  /=   CIPMessageRouterRequest(
     ]
 )
 
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-send(cipmrr, iface="en0")
-cipmrr.show()
+items = [
+    ItemData(typeId=0x0000, data=b''), ItemData(typeId=0x00B2, data=b'')
+]
+enip_send_rrr_data = ENIPSendRRData(items=items, itemCount=len(items))
+enip_tcp = ENIPTCP(
+    commandId=0x006F,  # SendRRData command
+    # Do not set length; let Scapy calculate it
+    session=0x00000000,  # For dummy packet
+    status=0x00000000,
+    senderContext=RawVal(b'\x00' * 8),
+    options=0x00000000
+) / enip_send_rrr_data
 
-print(conf.ifaces)
+
+
+
+data_pkt = IP(src="192.168.1.10", dst="192.168.1.20") / TCP(sport=src_port, dport=dst_port,flags='PA', seq=1, ack=1) / enip_tcp / cip_request
+
+send(data_pkt)
+data_pkt.show()

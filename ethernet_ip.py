@@ -1,1 +1,0 @@
-from scapy.contrib.enipTCP import ENIPTCP
