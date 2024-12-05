@@ -1,11 +1,20 @@
+from scapy.fields import LEIntField
 from scapy.layers.inet import Ether, IP, TCP
-from scapy.sendrecv import send
-from scapy_cip_enip.cip import CIP, CIP_Path
-from scapy_cip_enip.enip_tcp import ENIP_TCP
+from scapy.packet import Packet
+from scapy.sendrecv import sendp
+from scapy_cip_enip.cip import CIP
 
-pkt = Ether() / IP(src='192.168.1.1', dst='192.168.0.1') / TCP(sport=5000, dport=80, flags='S')
+class CIPIO(Packet):
+    name = "CIP IO"
+    fields_desc = [
+        LEIntField("CIP Sequence Count", 0),
+        LEIntField("sequence", 0),
+    ]
 
-pkt /= ENIP_TCP() / CIP(service=0x4c,)
-# print(CIP_Path.make_str('HMI_LIT101').fields)
-pkt.show()
-# send(pkt, verbose=0)
+cipiopkt = CIP()
+
+"""
+192.168.1.14
+
+192.168.0.1
+"""

@@ -1,26 +1,31 @@
 from pydantic import BaseModel, IPvAnyAddress, conint
 from typing import List, Union, Optional
 
-# Pydantic models for validation
-class Class0(BaseModel):
+class BaseClass(BaseModel):
     src_ip: IPvAnyAddress
     dst_ip: IPvAnyAddress
+    session_duration: int # in minutes
+
+# Pydantic models for validation
+class Class0(BaseClass):
+    rpi: int  # Assuming rpi is a valid integer
 
     model_config = {
         "extra": "forbid"  # Forbid extra fields
     }
 
-class Class1(Class0):
+class Class1(BaseClass):
     rpi: int  # Assuming rpi is a valid integer
 
     model_config = {
         "extra": "forbid"
     }
 
-class Class3(Class0):
+class Class3(BaseClass):
     sport: conint(ge=0, le=65535)
     dport: conint(ge=0, le=65535)
-    rpi: int  # Assuming rpi is time in milliseconds as an integer
+    min_random: int # min time in millisecond
+    max_random: int # max time in millisecond
 
     model_config = {
         "extra": "forbid"
