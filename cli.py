@@ -7,6 +7,7 @@ import time
 
 from class3 import gen_class_3_cip_packet, randomize_service
 from cli_types import Class0, Class1, Class3, MainModel
+from utils import random_interval_between
 
 """
 Add a verbose flag to print the packet response on the CLI itself.
@@ -14,19 +15,31 @@ TODO: Add verbose logging
 """
 
 # Placeholder functions for generating traffic
-def generate_class0_traffic(cfg, verbose):
+def generate_class0_traffic(cfg, verbose, stop_event, session_duration):
     # Placeholder for generating class 0 traffic
     click.echo(f"Generating class 0 traffic from {cfg.src_ip} to {cfg.dst_ip}")
-    if verbose:
-        click.echo("Packet response: ...")
+    start_time = time.time()
+    session_duration_seconds = session_duration * 60
+    while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds:
+        print(".", end="", flush=True)
+        time.sleep(cfg.rpi / 1000.0)
 
-def generate_class1_traffic(cfg, verbose):
+    if verbose:
+        pass
+
+def generate_class1_traffic(cfg, verbose, stop_event, session_duration):
     # Placeholder for generating class 1 traffic
     click.echo(f"Generating class 1 traffic from {cfg.src_ip} to {cfg.dst_ip} with rpi {cfg.rpi}")
-    if verbose:
-        click.echo("Packet response: ...")
+    start_time = time.time()
+    session_duration_seconds = session_duration * 60
+    while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds:
+        print(".", end="", flush=True)
+        time.sleep(cfg.rpi / 1000.0)
 
-def generate_class3_traffic(cfg, verbose):
+    if verbose:
+        pass
+
+def generate_class3_traffic(cfg, verbose, stop_event, session_duration):
     # Placeholder for generating class 3 traffic
     click.echo(f"Generating class 3 traffic from {cfg.src_ip}:{cfg.sport} to {cfg.dst_ip}:{cfg.dport} with rpi none")
     kwargs = {
@@ -36,12 +49,14 @@ def generate_class3_traffic(cfg, verbose):
         "dport" : int(cfg.dport),
         "service" : randomize_service()
     }
-    # print("Here src ip -->", cfg.src_ip)
-    # gen_class_3_cip_packet(src_ip=str(cfg.src_ip), dst_ip=str(cfg.dst_ip), sport=int(cfg.sport), dport=int(cfg.dport), service=randomize_service())
+    start_time = time.time()
+    session_duration_seconds = session_duration * 60
+    while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds:
+        print(".", end="", flush=True)
+        time.sleep(random_interval_between(cfg.min_random, cfg.max_random))
 
-
-    # gen_class_3_cip_packet(str(cfg.src_ip), str(cfg.dst_ip), int(cfg.sport), int(cfg.dport), randomize_service(), CIP_Path.make_str("HMI_LIT101"))
-
+    if verbose:
+        pass
 
     if verbose:
         click.echo("Packet response: ...")
@@ -54,6 +69,8 @@ def interactive(ctx):
     verbose = ctx.obj.get('VERBOSE', False)
     valid_classes = ['0', '1', '3']
     class_choice = None
+    session_duration = click.prompt('How long do you want to keep the session alive? (in minutes)', type=int)
+    ctx.obj['session_duration'] = session_duration # add session_duration to context
 
     while class_choice not in valid_classes:
         class_input = click.prompt('Select the type of traffic (class 0, class 1, class 3) [Enter the class number (0/1/3) or (class 0/class 1/class 3)]', type=str)
@@ -66,38 +83,51 @@ def interactive(ctx):
         else:
             click.echo("Invalid choice. Please select from 'class 0', 'class 1', 'class 3'.")
 
+
+    # initialize a thread to None
+    t = None
+    stop_event = threading.Event()
+
     if class_choice == '0':
         # Prompt for src_ip and dst_ip
         src_ip = click.prompt('Enter src_ip', type=str)
         dst_ip = click.prompt('Enter dst_ip', type=str)
         rpi = click.prompt('Enter rpi', type=int)
-        session_duration = click.prompt('How long do you want to keep the session alive? (in minutes)', type=int)
 
         # Validate IP addresses
         try:
-            data = {'src_ip': src_ip, 'dst_ip': dst_ip, 'rpi': rpi, 'session_duration': session_duration}
+            data = {'src_ip': src_ip, 'dst_ip': dst_ip, 'rpi': rpi}
             class0_obj = Class0(**data)
         except ValidationError as e:
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        generate_class0_traffic(class0_obj, verbose)
+        t = threading.Thread(target=generate_class0_traffic, args=(class0_obj, verbose, stop_event, session_duration))
+        t.start()
+        # stop the thread, send a stop event
+        time.sleep(session_duration * 60)
+        stop_event.set()
+
 
     elif class_choice == '1':
         # Prompt for src_ip, dst_ip, rpi
         src_ip = click.prompt('Enter src_ip', type=str)
         dst_ip = click.prompt('Enter dst_ip', type=str)
         rpi = click.prompt('Enter rpi', type=int)
-        session_duration = click.prompt('How long do you want to keep the session alive? (in minutes)', type=int)
         # Validate inputs
         try:
-            data = {'src_ip': src_ip, 'dst_ip': dst_ip, 'rpi': rpi, 'session_duration': session_duration}
+            data = {'src_ip': src_ip, 'dst_ip': dst_ip, 'rpi': rpi}
             class1_obj = Class1(**data)
         except ValidationError as e:
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        generate_class1_traffic(class1_obj, verbose)
+        t = threading.Thread(target=generate_class0_traffic, args=(class1_obj, verbose, stop_event, session_duration))
+        t.start()
+        # stop the thread, send a stop event
+        time.sleep(session_duration * 60)
+        stop_event.set()
+
 
     elif class_choice == '3':
         # Prompt for src_ip, dst_ip, source_port, dest_port, rpi
@@ -105,9 +135,8 @@ def interactive(ctx):
         dst_ip = click.prompt('Enter dst_ip', type=str)
         source_port = click.prompt('Enter source_port', type=int)
         dest_port = click.prompt('Enter dest_port', type=int)
-        min_random = click.prompt('Enter min time (in milliseconds)', type=int)
-        max_random = click.prompt('Enter max time  (in milliseconds)', type=int)
-        session_duration = click.prompt('How long do you want to keep the session alive? (in minutes)', type=int)
+        min_random = click.prompt('Enter min time (in seconds)', type=int)
+        max_random = click.prompt('Enter max time  (in seconds)', type=int)
         # Validate inputs
         try:
             data = {
@@ -117,22 +146,33 @@ def interactive(ctx):
                 'dport': dest_port,
                 'min_random': min_random,
                 'max_random': max_random,
-                'session_duration': session_duration
             }
             class3_obj = Class3(**data)
         except ValidationError as e:
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        generate_class3_traffic(class3_obj, verbose)
+        t = threading.Thread(target=generate_class3_traffic, args=(class3_obj, verbose, stop_event, session_duration))
+        t.start()
+        # stop the thread, send a stop event
+        time.sleep(session_duration * 60)
+        stop_event.set()
+
+    try:
+        t.join()
+    except KeyboardInterrupt:
+        click.echo("Generation stopped by user!")
+
 
 # Concurrent mode command
 @click.command()
 @click.option('--config', type=click.Path(exists=True), required=True, help='Path to JSON config file.')
+@click.option("--session_duration", type=int, help="Session duration in minutes.", required=True)
 @click.pass_context
-def concurrent(ctx, config):
+def concurrent(ctx, config, session_duration):
     """Concurrent mode to generate multiple types of CIP traffic from a config file."""
     verbose = ctx.obj.get('VERBOSE', False)
+    ctx.obj['session_duration'] = session_duration
     with open(config, 'r') as f:
         json_data = f.read()
 
@@ -150,6 +190,7 @@ def concurrent(ctx, config):
         return
 
     threads = []
+    stop_event = threading.Event()
     # Process class0 configurations
     if validated_data.class0:
         class0_configs = validated_data.class0
@@ -157,7 +198,7 @@ def concurrent(ctx, config):
             class0_configs = [class0_configs]
         for cfg in class0_configs:
             # TODO: Run this thread for session_duration time
-            t = threading.Thread(target=generate_class0_traffic, args=(cfg, verbose))
+            t = threading.Thread(target=generate_class0_traffic, args=(cfg, verbose, stop_event, session_duration))
             threads.append(t)
             t.start()
 
@@ -168,7 +209,7 @@ def concurrent(ctx, config):
             class1_configs = [class1_configs]
         for cfg in class1_configs:
             # TODO: Run this thread for session_duration time
-            t = threading.Thread(target=generate_class1_traffic, args=(cfg, verbose))
+            t = threading.Thread(target=generate_class1_traffic, args=(cfg, verbose, stop_event, session_duration))
             threads.append(t)
             t.start()
 
@@ -179,13 +220,20 @@ def concurrent(ctx, config):
             class3_configs = [class3_configs]
         for cfg in class3_configs:
             # TODO: Run this thread for session_duration time
-            t = threading.Thread(target=generate_class3_traffic, args=(cfg, verbose))
+            t = threading.Thread(target=generate_class3_traffic, args=(cfg, verbose, stop_event, session_duration))
             threads.append(t)
             t.start()
 
-    # Wait for all threads to complete
-    for t in threads:
-        t.join()
+    # stop the thread, send a stop event
+    time.sleep(session_duration * 60)
+    stop_event.set()
+
+    try:
+        # Wait for all threads to complete
+        for t in threads:
+            t.join()
+    except KeyboardInterrupt:
+        click.echo("Generation stopped by user!")
 
 # Define the CIPPacketGenerator class
 class CIPPacketGenerator(click.Group):

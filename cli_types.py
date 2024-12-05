@@ -4,7 +4,6 @@ from typing import List, Union, Optional
 class BaseClass(BaseModel):
     src_ip: IPvAnyAddress
     dst_ip: IPvAnyAddress
-    session_duration: int # in minutes
 
 # Pydantic models for validation
 class Class0(BaseClass):

@@ -51,3 +51,4 @@ class ENIP_UDP(Packet):
 
 def random_interval_between(low, high):
     return round(random.randint(low * 1000, high * 1000) / 1000, 2)
+

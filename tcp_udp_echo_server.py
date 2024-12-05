@@ -35,11 +35,11 @@ def udp_echo_server(host='0.0.0.0', port=12345):
 
 if __name__ == "__main__":
     # Start TCP server thread
-    tcp_thread = threading.Thread(target=tcp_echo_server, args=('0.0.0.0', 12345), daemon=True)
+    tcp_thread = threading.Thread(target=tcp_echo_server, args=('192.168.0.114', 12345), daemon=True)
     tcp_thread.start()
 
     # Start UDP server thread
-    udp_thread = threading.Thread(target=udp_echo_server, args=('0.0.0.0', 12345), daemon=True)
+    udp_thread = threading.Thread(target=udp_echo_server, args=('192.168.0.114', 12345), daemon=True)
     udp_thread.start()
 
     # Keep the main thread running

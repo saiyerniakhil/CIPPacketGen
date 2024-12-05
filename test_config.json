@@ -2,20 +2,17 @@
     "class0": [{
         "src_ip": "192.168.0.1",
         "dst_ip": "192.168.0.2",
-        "session_duration": 5,
-        "rpi": 10
+        "rpi": 1000
     },
     {
         "src_ip": "192.168.0.1",
         "dst_ip": "192.168.0.2",
-        "rpi": 10,
-        "session_duration": 5
+        "rpi": 1000
     }],
     "class1": [{
         "src_ip": "192.168.0.1",
         "dst_ip": "192.168.0.2",
-        "rpi": 10,
-        "session_duration": 5
+        "rpi": 1000
     }],
     "class3": [{
         "src_ip": "192.168.0.1",
@@ -23,7 +20,6 @@
         "sport": 9000,
         "dport": 9000,
         "min_random": 5,
-        "max_random": 10,
-        "session_duration": 5
+        "max_random": 10
     }]
 }
