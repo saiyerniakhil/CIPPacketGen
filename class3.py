@@ -15,16 +15,15 @@ services = {
     0x52: "Read_Tag_Fragmented_Service",
 }
 
-def gen_class_3_cip_packet(src_ip, dst_ip, sport, dport, service, path):
-    enippkt = Ether(type=0x0800) / IP(src=src_ip, dst=dst_ip) / TCP(sport=sport, dport=dport, flags='S') / ENIP_TCP(
-        session=0x00)
+def gen_class_3_cip_packet(src_ip, dst_ip, sport, dport, service, path, flag, seq):
+    # enippkt = (Ether(type=0x0800) / IP(src=src_ip, dst=dst_ip) / TCP(sport=sport, dport=dport, flags=flag, seq=seq))
+    enippkt = ENIP_TCP(
+        session=0x75f66853)
     cippkt = CIP(service=service, path=path)
     enippkt /= ENIP_SendUnitData(items=[
         ENIP_SendUnitData_Item() / ENIP_ConnectionAddress(connection_id=0),
         ENIP_SendUnitData_Item() / ENIP_ConnectionPacket(sequence=0) / cippkt
     ])
-    sendp(enippkt)
-    enippkt.show()
     return enippkt
 
 def randomize_service():

@@ -1,32 +1,53 @@
+from sys import flags
+
+from scapy.layers.inet import Ether, IP, TCP
+
+from scapy.sendrecv import sr1, sendp
+
+from scapy_cip_enip import plc
+from scapy_cip_enip.cip import CIP, CIP_Path
+from scapy_cip_enip.enip_tcp import ENIP_TCP, ENIP_SendUnitData, ENIP_SendUnitData_Item, ENIP_ConnectionAddress, \
+    ENIP_ConnectionPacket
+
+import logging
 import sys
 
-from scapy.fields import LEIntField
-from scapy.layers.inet import Ether, IP, TCP
-from scapy.packet import Packet
-from scapy.sendrecv import sendp
-from scapy_cip_enip.cip import CIP, CIP_Path
-from scapy_cip_enip.plc import PLCClient
+from class0 import craft_class0_32_bit_header_packet
+from utils import random_application_data
 
-# testing connection to a plc client
+logging.basicConfig(format='[%(levelname)s] %(message)s', level=logging.DEBUG)
 
-client = PLCClient('192.168.0.114', plc_port=12345)
+"""# Connect to PLC
+client = plc.PLCClient('127.0.0.1', 12345)
 if not client.connected:
     sys.exit(1)
-
-print(f"Established connection {client.session_id}")
+print("Established session {}".format(client.session_id))
 
 if not client.forward_open():
-    print("Failed to open connection")
     sys.exit(1)
 
 # Send a CIP ReadTag request
-cippkt = CIP(service=0x4c, path=CIP_Path.make_str("HMI_LIT101"))
+cippkt = CIP(service=0x4c, path=CIP_Path.make(class_id=0x93, instance_id=3, member_id=None, attribute_id=10))
 client.send_unit_cip(cippkt)
 
-# Receive the response and show it
-resppkt = client.recv_enippkt()
-resppkt[CIP].show()
+
+
 
 # Close the connection
-client.forward_close()
+# client.forward_close()"""
+
+src_ip = '192.168.0.1'
+dst_ip = '192.168.0.114'
+dport = 12345
+
+client = plc.PLCClient('192.168.0.114', 12345)
+if not client.connected:
+    sys.exit(1)
+print("Established session {}".format(client.session_id))
+client.send_cip_udp(craft_class0_32_bit_header_packet(src_ip, dst_ip, random_application_data(8)))
+client.send_cip_udp(craft_class0_32_bit_header_packet(src_ip, dst_ip, random_application_data(8)))
+client.send_cip_udp(craft_class0_32_bit_header_packet(src_ip, dst_ip, random_application_data(8)))
+client.send_cip_udp(craft_class0_32_bit_header_packet(src_ip, dst_ip, random_application_data(8)))
+client.send_cip_udp(craft_class0_32_bit_header_packet(src_ip, dst_ip, random_application_data(8)))
+
 

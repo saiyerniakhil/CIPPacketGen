@@ -1,47 +1,61 @@
 import socket
 import threading
 
-def tcp_echo_server(host='0.0.0.0', port=12345):
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as server_socket:
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((host, port))
-        server_socket.listen()
-        print(f"TCP Echo Server listening on {host}:{port}")
+# TCP Echo Server
+def tcp_echo_server(host, port):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)  # Reuse the address
+    server_socket.bind((host, port))
+    server_socket.listen(5)
+    print(f"TCP Echo Server listening on {host}:{port}")
 
+    def handle_client(client_socket, client_address):
+        print(f"TCP connection established with {client_address}")
+        try:
+            while True:
+                data = client_socket.recv(1024)
+                if not data:
+                    break
+                client_socket.sendall(data)  # Echo back the data
+        except Exception as e:
+            print(f"Error handling client {client_address}: {e}")
+        finally:
+            client_socket.close()
+            print(f"TCP connection with {client_address} closed")
+
+    try:
         while True:
             client_socket, client_address = server_socket.accept()
-            threading.Thread(target=handle_tcp_client, args=(client_socket, client_address)).start()
+            threading.Thread(
+                target=handle_client,
+                args=(client_socket, client_address),
+                daemon=True  # Daemon threads close when the main thread exits
+            ).start()
+    except KeyboardInterrupt:
+        print("\nServer shutting down...")
+    finally:
+        server_socket.close()
+        print("Server socket closed")
 
-def handle_tcp_client(client_socket, client_address):
-    with client_socket:
-        print(f"TCP Connection from {client_address}")
-        while True:
-            data = client_socket.recv(1024)
-            if not data:
-                print(f"TCP Connection closed by {client_address}")
-                break
-            print(f"TCP Received from {client_address}: {data.decode()}")
-            client_socket.sendall(data)
+# UDP Echo Server
+def udp_echo_server(host, port):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    server_socket.bind((host, port))
+    print(f"UDP Echo Server listening on {host}:{port}")
 
-def udp_echo_server(host='0.0.0.0', port=12345):
-    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as server_socket:
-        server_socket.bind((host, port))
-        print(f"UDP Echo Server listening on {host}:{port}")
+    while True:
+        data, client_address = server_socket.recvfrom(1024)
+        print(f"UDP message from {client_address}")
+        server_socket.sendto(data, client_address)  # Echo back the data
 
-        while True:
-            data, client_address = server_socket.recvfrom(1024)
-            print(f"UDP Received from {client_address}: {data.decode()}")
-            server_socket.sendto(data, client_address)
 
 if __name__ == "__main__":
-    # Start TCP server thread
-    tcp_thread = threading.Thread(target=tcp_echo_server, args=('192.168.0.114', 12345), daemon=True)
-    tcp_thread.start()
+    host = "192.168.0.114"
+    tcp_port = 12345
+    udp_port = 2222
 
-    # Start UDP server thread
-    udp_thread = threading.Thread(target=udp_echo_server, args=('192.168.0.114', 12345), daemon=True)
-    udp_thread.start()
+    # Start TCP Echo Server in a thread
+    threading.Thread(target=tcp_echo_server, args=(host, tcp_port)).start()
 
-    # Keep the main thread running
-    tcp_thread.join()
-    udp_thread.join()
+    # Start UDP Echo Server in a thread
+    threading.Thread(target=udp_echo_server, args=(host, udp_port)).start()

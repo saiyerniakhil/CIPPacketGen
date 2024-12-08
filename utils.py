@@ -1,4 +1,5 @@
 # RealTimeHeader class definition
+import os
 import struct
 import random
 
@@ -49,6 +50,19 @@ class ENIP_UDP(Packet):
             p = struct.pack("<H", self.count) + p[2:]
         return p + pay
 
+
 def random_interval_between(low, high):
+    """
+
+    :param low: lower bound
+    :param high: upper bound
+    :return: a random number between (low,high) range
+    """
     return round(random.randint(low * 1000, high * 1000) / 1000, 2)
 
+def random_application_data(length=8):
+    """
+    :param length: length of application data
+    :return: generates random binary application data
+    """
+    return os.urandom(length)

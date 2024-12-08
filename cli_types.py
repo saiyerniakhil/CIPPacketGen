@@ -3,6 +3,7 @@ from typing import List, Union, Optional
 
 class BaseClass(BaseModel):
     src_ip: IPvAnyAddress
+    dst_port: conint(ge=0, le=65535)
     dst_ip: IPvAnyAddress
 
 # Pydantic models for validation
@@ -21,8 +22,6 @@ class Class1(BaseClass):
     }
 
 class Class3(BaseClass):
-    sport: conint(ge=0, le=65535)
-    dport: conint(ge=0, le=65535)
     min_random: int # min time in millisecond
     max_random: int # max time in millisecond
 
