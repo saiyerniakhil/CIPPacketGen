@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/CIPPacketGen.iml" filepath="$PROJECT_DIR$/.idea/CIPPacketGen.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../scapy-cip-enip/.idea/scapy-cip-enip.iml" filepath="$PROJECT_DIR$/../scapy-cip-enip/.idea/scapy-cip-enip.iml" />
     </modules>
   </component>
 </project>

@@ -2,7 +2,6 @@ from pydantic import BaseModel, IPvAnyAddress, conint
 from typing import List, Union, Optional
 
 class BaseClass(BaseModel):
-    src_ip: IPvAnyAddress
     dst_port: conint(ge=0, le=65535)
     dst_ip: IPvAnyAddress
 

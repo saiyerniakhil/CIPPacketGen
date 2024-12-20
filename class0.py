@@ -18,9 +18,11 @@ Heartbeat Format
 from random import random
 
 from scapy.fields import StrLenField, PacketField
+from scapy.all import Raw
 from scapy.packet import Packet, bind_layers
 from scapy.layers.inet import UDP, IP
 from scapy.sendrecv import send
+from scapy_cip_enip.enip_udp import ENIP_UDP_SequencedAddress, ENIP_UDP_KEEPALIVE
 
 from utils import ENIP_UDP_Item, ENIP_UDP, RealTimeHeader, random_application_data
 
@@ -71,6 +73,16 @@ def craft_class0_32_bit_header_packet(src_ip: str, dst_ip: str, data=b'\x01\x02\
     ip_pkt = IP(src=src_ip, dst=dst_ip) / udp_pkt
 
     return ip_pkt
+
+def craft_class0_keep_alive_packet(src_ip: str, dst_ip: str):
+    pkt = IP(src=src_ip, dst=dst_ip)
+    pkt /= UDP(sport=2222, dport=2222)
+    pkt /= ENIP_UDP(items=[
+        ENIP_UDP_Item() / ENIP_UDP_SequencedAddress(connection_id=1337, sequence=42),
+        ENIP_UDP_Item(type_id=0x00b1) / Raw(load=ENIP_UDP_KEEPALIVE),
+    ])
+
+    return pkt
 
 # Class 0 Packet Formats
 class CIP_Class0_Modeless(Packet):

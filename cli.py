@@ -1,10 +1,9 @@
-from random import random
+#!./.venv/bin/python
 
 import click
 import threading
 import json
 from pydantic import ValidationError
-from scapy.sendrecv import send
 from scapy.all import conf
 from scapy_cip_enip.cip import CIP, CIP_Path
 import time
@@ -23,19 +22,25 @@ Add a verbose flag to print the packet response on the CLI itself.
 TODO: Add verbose logging
 """
 
-# Placeholder functions for generating traffic
-def generate_class0_traffic(cfg, verbose, stop_event, session_duration):
+
+def generate_class0_traffic(cfg, verbose, src_ip, stop_event, session_duration):
     """
-    :param cfg: context passed from the click state
-    :param verbose: print more logs TODO: Implement verbose logs
-    :param stop_event: event from the main thread, to interact with the thread
-    :param session_duration: duration (in seconds)
-    :return:
+    :param cfg: Configuration object containing destination IP, port, and requested packet interval (RPI).
+    :type cfg: object
+    :param verbose: Flag to enable verbose output.
+    :type verbose: bool
+    :param src_ip: Source IP address from where the traffic is generated.
+    :type src_ip: str
+    :param stop_event: Event object used to signal the termination of the traffic generation loop.
+    :type stop_event: threading.Event
+    :param session_duration: Duration of the session in minutes for which the traffic should be generated.
+    :type session_duration: int
+    :return: None
     """
     client = None
     try:
         client = connect_to_plc(str(cfg.dst_ip), str(cfg.dst_port))
-        click.echo(f"Generating class 0 traffic from {cfg.src_ip} to {cfg.dst_ip}")
+        click.echo(f"Generating Class0 traffic from {src_ip} to {cfg.dst_ip}")
         packet_count = {
             'success': 0,
             'failure': 0
@@ -45,7 +50,7 @@ def generate_class0_traffic(cfg, verbose, stop_event, session_duration):
         while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds and client is not None:
             try:
                 client.send_cip_udp(
-                    craft_class0_32_bit_header_packet(str(cfg.src_ip), str(cfg.dst_ip), random_application_data(8)))
+                    craft_class0_modeless_packet(str(src_ip), str(cfg.dst_ip), random_application_data(8)))
                 packet_count['success'] += 1
                 print(".", end="", flush=True)
             except Exception as e:
@@ -54,7 +59,7 @@ def generate_class0_traffic(cfg, verbose, stop_event, session_duration):
                 print("x", end="", flush=True)
             time.sleep(cfg.rpi / 1000.0)
         click.echo(
-            f"\n\ntotal packets sent: {packet_count['success'] + packet_count['failure']} | failed: {packet_count['failure']} | success: {packet_count['success']} | failure: {packet_count['failure']}")
+            f"\n\nTotal Class0 packets sent: {packet_count['success'] + packet_count['failure']} | failed: {packet_count['failure']} | success: {packet_count['success']} | failure: {packet_count['failure']}")
         client.sock.close()  # close the connection
     except Exception as e:
         click.echo(f"{e}")
@@ -64,12 +69,19 @@ def generate_class0_traffic(cfg, verbose, stop_event, session_duration):
 
 
 
-def generate_class1_traffic(cfg, verbose, stop_event, session_duration):
-    # Placeholder for generating class 1 traffic
+def generate_class1_traffic(cfg, verbose, src_ip, stop_event, session_duration):
+    """
+    :param cfg: Configuration object containing destination IP, port, and RPI (Requested Packet Interval).
+    :param verbose: Boolean flag to enable or disable detailed logging.
+    :param src_ip: Source IP address for generating Class1 traffic.
+    :param stop_event: Thread-safe event object to signal the process to stop.
+    :param session_duration: Duration of the traffic generation session in minutes.
+    :return: None
+    """
     client = None
     try:
         client = connect_to_plc(str(cfg.dst_ip), str(cfg.dst_port))
-        click.echo(f"Generating class 1 traffic from {cfg.src_ip} to {cfg.dst_ip} with rpi {cfg.rpi}")
+        click.echo(f"Generating Class1 traffic from {src_ip} to {cfg.dst_ip} with rpi {cfg.rpi}")
         packet_count = {
             'success': 0,
             'failure': 0
@@ -78,7 +90,7 @@ def generate_class1_traffic(cfg, verbose, stop_event, session_duration):
         session_duration_seconds = session_duration * 60
         while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds and client is not None:
             try:
-                client.send_cip_udp(craft_class1_32bitheader_packet(cfg.src_ip, cfg.dst_ip, random_application_data(8)))
+                client.send_cip_udp(craft_class1_32bitheader_packet(src_ip, cfg.dst_ip, random_application_data(8)))
                 packet_count['success'] += 1
                 print(".", end="", flush=True)
             except Exception as e:
@@ -87,7 +99,7 @@ def generate_class1_traffic(cfg, verbose, stop_event, session_duration):
                 print("x", end="", flush=True)
             time.sleep(cfg.rpi / 1000.0)
         print(
-            f"\n\ntotal packets sent: {packet_count['success'] + packet_count['failure']} | failed: {packet_count['failure']} | success: {packet_count['success']} | failure: {packet_count['failure']}")
+            f"\n\nTotal Class1 packets sent: {packet_count['success'] + packet_count['failure']} | failed: {packet_count['failure']} | success: {packet_count['success']} | failure: {packet_count['failure']}")
         if client is not None:
             client.sock.close()  # close the connection
     except Exception as e:
@@ -97,8 +109,20 @@ def generate_class1_traffic(cfg, verbose, stop_event, session_duration):
             stop_event.set()
 
 
-def generate_class3_traffic(cfg, verbose, stop_event, session_duration):
-
+def generate_class3_traffic(cfg, verbose, src_ip, stop_event, session_duration):
+    """
+    :param cfg: Configuration object containing destination IP, destination port, and random interval settings.
+    :type cfg: object
+    :param verbose: Flag to enable or disable verbose output.
+    :type verbose: bool
+    :param src_ip: Source IP address from which the traffic will be generated.
+    :type src_ip: str
+    :param stop_event: Event object used to signal when to stop generating traffic.
+    :type stop_event: threading.Event
+    :param session_duration: Duration of the traffic generation session in minutes.
+    :type session_duration: int
+    :return: None
+    """
     client = None
     try:
         client = connect_to_plc(str(cfg.dst_ip), str(cfg.dst_port))
@@ -109,9 +133,9 @@ def generate_class3_traffic(cfg, verbose, stop_event, session_duration):
         }
         sport = client.sock.getsockname()[1]
         click.echo(
-            f"Generating class 3 traffic from {cfg.src_ip}:{sport} to {cfg.dst_ip}:{cfg.dst_port} with rpi none")
+            f"Generating Class3 traffic from {src_ip}:{sport} to {cfg.dst_ip}:{cfg.dst_port} with rpi none")
         kwargs = {
-            "src_ip": str(cfg.src_ip),
+            "src_ip": str(src_ip),
             "dst_ip": str(cfg.dst_ip),
             "dport": int(cfg.dst_port),
             "service": randomize_service()
@@ -121,7 +145,7 @@ def generate_class3_traffic(cfg, verbose, stop_event, session_duration):
         while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds and client is not None:
             try:
                 flag = "S" if packet_count['total'] == 1 else "PA" # only s if it is the first packet
-                pkt = gen_class_3_cip_packet(str(cfg.src_ip), str(cfg.dst_ip), dport=cfg.dst_port,
+                pkt = gen_class_3_cip_packet(str(src_ip), str(cfg.dst_ip), dport=cfg.dst_port,
                                        sport=sport, service=0x4c, path=CIP_Path.make(class_id=0x93, instance_id=3, member_id=None, attribute_id=10), seq=packet_count['success'], flag=flag)
                 client.sock.send(bytes(pkt[ENIP_SendUnitData]))
                 packet_count['success'] += 1
@@ -132,7 +156,7 @@ def generate_class3_traffic(cfg, verbose, stop_event, session_duration):
                 print("x", end="", flush=True)
             time.sleep(random_interval_between(cfg.min_random, cfg.max_random))
         print(
-            f"\n\ntotal packets sent: {packet_count['success'] + packet_count['failure']} | failed: {packet_count['failure']} | success: {packet_count['success']} | failure: {packet_count['failure']}")
+            f"\n\nTotal Class3  packets sent: {packet_count['success'] + packet_count['failure']} | failed: {packet_count['failure']} | success: {packet_count['success']} | failure: {packet_count['failure']}")
         if client is not None:
             client.sock.close()  # close the connection
     except Exception as e:
@@ -151,7 +175,21 @@ def generate_class3_traffic(cfg, verbose, stop_event, session_duration):
 @click.command()
 @click.pass_context
 def interactive(ctx):
-    """Interactive mode to generate a single type of CIP traffic."""
+    """
+    :param ctx: Click context object that holds necessary parameters passed during the command execution, notably session duration and verbosity settings.
+    :return: None
+
+    This function runs an interactive session to configure and generate specific types of network traffic (class 0, class 1, or class 3).
+    The user is prompted to input session duration and choose the traffic class type (0, 1, or 3). Further parameters required for the traffic type are requested interactively.
+
+    For each traffic class:
+    - Class 0: Accepts destination IP, destination port, and RPI (Random Packet Interval).
+    - Class 1: Accepts destination IP, destination port, and RPI.
+    - Class 3: Accepts destination IP, destination port, minimum random interval, and maximum random interval.
+
+    After gathering inputs, the function validates them against the respective class schema. If the validation is successful, it initializes a thread to generate the traffic of the selected class.
+    The thread listens for a stop event and can gracefully terminate on user interruption (CTRL+C) or when the stop event is explicitly triggered.
+    """
     verbose = ctx.obj.get('VERBOSE', False)
     valid_classes = ['0', '1', '3']
     class_choice = None
@@ -182,13 +220,13 @@ def interactive(ctx):
 
         # Validate IP addresses
         try:
-            data = {'src_ip': ctx.obj.get('src_ip'), 'dst_ip': dst_ip, 'dst_port': dst_port, 'rpi': rpi}
+            data = {'dst_ip': dst_ip, 'dst_port': dst_port, 'rpi': rpi}
             class0_obj = Class0(**data)
         except ValidationError as e:
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        t = threading.Thread(target=generate_class0_traffic, args=(class0_obj, verbose, stop_event, session_duration))
+        t = threading.Thread(target=generate_class0_traffic, args=(class0_obj, verbose, ctx.obj.get('src_ip'), stop_event, session_duration))
         t.start()
         try:
             while t.is_alive():
@@ -208,13 +246,13 @@ def interactive(ctx):
         rpi = click.prompt('Enter rpi', type=int)
         # Validate inputs
         try:
-            data = {'src_ip': ctx.obj.get('src_ip'), 'dst_ip': dst_ip, 'dst_port': dst_port, 'rpi': rpi}
+            data = {'dst_ip': dst_ip, 'dst_port': dst_port, 'rpi': rpi}
             class1_obj = Class1(**data)
         except ValidationError as e:
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        t = threading.Thread(target=generate_class0_traffic, args=(class1_obj, verbose, stop_event, session_duration))
+        t = threading.Thread(target=generate_class0_traffic, args=(class1_obj, verbose, ctx.obj.get('src_ip'), stop_event, session_duration))
         t.start()
         # stop the thread, send a stop event
         try:
@@ -237,7 +275,6 @@ def interactive(ctx):
         # Validate inputs
         try:
             data = {
-                'src_ip': ctx.obj.get('src_ip'),
                 'dst_ip': dst_ip,
                 'dst_port': dest_port,
                 'min_random': min_random,
@@ -248,7 +285,7 @@ def interactive(ctx):
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        t = threading.Thread(target=generate_class3_traffic, args=(class3_obj, verbose, stop_event, session_duration))
+        t = threading.Thread(target=generate_class3_traffic, args=(class3_obj, ctx.obj.get('src_ip'), verbose, stop_event, session_duration))
         t.start()
         # stop the thread, send a stop event
         try:
@@ -273,7 +310,14 @@ def interactive(ctx):
 @click.option("--session_duration", type=int, help="Session duration in minutes.", required=True)
 @click.pass_context
 def concurrent(ctx, config,session_duration):
-    """Concurrent mode to generate multiple types of CIP traffic from a config file."""
+    """
+    Handle concurrent execution of traffic generation for multiple classes based on provided configurations.
+
+    :param ctx: Click context object containing command-line state and options.
+    :param config: Path to the JSON configuration file specifying the setup for traffic generation.
+    :param session_duration: Session duration in minutes for how long the traffic generation threads should run.
+    :return: None
+    """
     verbose = ctx.obj.get('VERBOSE', False)
 
     ctx.obj['session_duration'] = session_duration
@@ -302,7 +346,7 @@ def concurrent(ctx, config,session_duration):
             class0_configs = [class0_configs]
         for cfg in class0_configs:
             # TODO: Run this thread for session_duration time
-            t = threading.Thread(target=generate_class0_traffic, args=(cfg, verbose, stop_event, session_duration))
+            t = threading.Thread(target=generate_class0_traffic, args=(cfg, verbose, ctx.obj.get('src_ip'), stop_event, session_duration))
             threads.append(t)
             t.start()
 
@@ -313,7 +357,7 @@ def concurrent(ctx, config,session_duration):
             class1_configs = [class1_configs]
         for cfg in class1_configs:
             # TODO: Run this thread for session_duration time
-            t = threading.Thread(target=generate_class1_traffic, args=(cfg, verbose, stop_event, session_duration))
+            t = threading.Thread(target=generate_class1_traffic, args=(cfg, verbose, ctx.obj.get('src_ip'), stop_event, session_duration))
             threads.append(t)
             t.start()
 
@@ -324,7 +368,7 @@ def concurrent(ctx, config,session_duration):
             class3_configs = [class3_configs]
         for cfg in class3_configs:
             # TODO: Run this thread for session_duration time
-            t = threading.Thread(target=generate_class3_traffic, args=(cfg, verbose, stop_event, session_duration))
+            t = threading.Thread(target=generate_class3_traffic, args=(cfg, verbose, ctx.obj.get('src_ip'),  stop_event, session_duration))
             threads.append(t)
             t.start()
 
@@ -341,6 +385,18 @@ def concurrent(ctx, config,session_duration):
 
 # Define the CIPPacketGenerator class
 class CIPPacketGenerator(click.Group):
+    """
+    A class for managing and grouping CIP packet generator commands in a Click command-line interface.
+
+    This class extends `click.Group` and serves as a container for subcommands specific to the CIP packet generator domain. It allows the inclusion of multiple commands to provide functionality such as interactive and concurrent operations.
+
+    Methods:
+        __init__(*args, **kwargs):
+            Initializes the CIPPacketGenerator group, adding predefined commands (`interactive` and `concurrent`) to the group.
+
+    Attributes:
+        Standard attributes inherited from `click.Group`.
+    """
     def __init__(self, *args, **kwargs):
         super(CIPPacketGenerator, self).__init__(*args, **kwargs)
         self.add_command(interactive)
