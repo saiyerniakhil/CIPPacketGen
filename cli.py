@@ -252,7 +252,7 @@ def interactive(ctx):
             click.echo(f"Invalid input:\n{e}")
             return
         # Generate traffic
-        t = threading.Thread(target=generate_class0_traffic, args=(class1_obj, verbose, ctx.obj.get('src_ip'), stop_event, session_duration))
+        t = threading.Thread(target=generate_class1_traffic, args=(class1_obj, verbose, ctx.obj.get('src_ip'), stop_event, session_duration))
         t.start()
         # stop the thread, send a stop event
         try:
