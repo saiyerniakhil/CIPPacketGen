@@ -50,7 +50,7 @@ def udp_echo_server(host, port):
 
 
 if __name__ == "__main__":
-    host = "10.24.89.52"
+    host = "10.0.0.46"
     tcp_port = 12345
     udp_port = 2222
 
