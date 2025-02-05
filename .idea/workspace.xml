@@ -5,16 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="849ce486-7526-4ab5-89ee-53409cc85e06" name="Changes" comment="add basic cli scaffolding">
-      <change beforePath="$PROJECT_DIR$/.idea/CIPPacketGen.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/CIPPacketGen.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/modules.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/vcs.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/class0.py" beforeDir="false" afterPath="$PROJECT_DIR$/class0.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cli.py" beforeDir="false" afterPath="$PROJECT_DIR$/cli.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cli_types.py" beforeDir="false" afterPath="$PROJECT_DIR$/cli_types.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/driver.py" beforeDir="false" afterPath="$PROJECT_DIR$/driver.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/tcp_udp_echo_server.py" beforeDir="false" afterPath="$PROJECT_DIR$/tcp_udp_echo_server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_config.json" beforeDir="false" afterPath="$PROJECT_DIR$/test_config.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../scapy-cip-enip/pyproject.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../scapy-cip-enip/pyproject.toml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -29,7 +23,7 @@
     </option>
   </component>
   <component name="Git.Settings">
-    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../scapy-cip-enip" />
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 3
@@ -56,7 +50,7 @@
     "Python.enip_udp.executor": "Run",
     "Python.test_cip.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
-    "git-widget-placeholder": "bugfix/fix-python2-issues",
+    "git-widget-placeholder": "dev",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",

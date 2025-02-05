@@ -1,0 +1,4 @@
+click
+pydantic
+scapy
+scapy-cip-enip
