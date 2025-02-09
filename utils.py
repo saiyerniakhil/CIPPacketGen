@@ -60,9 +60,9 @@ def random_interval_between(low, high):
     """
     return round(random.randint(low * 1000, high * 1000) / 1000, 2)
 
-def random_application_data(length=8):
+def random_application_data(minlength=8, maxlength=25):
     """
     :param length: length of application data
     :return: generates random binary application data
     """
-    return os.urandom(length)
+    return os.urandom(random.randint(minlength, maxlength))
