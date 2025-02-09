@@ -49,8 +49,9 @@ def generate_class0_traffic(cfg, verbose, src_ip, stop_event, session_duration):
         session_duration_seconds = session_duration * 60
         while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds and client is not None:
             try:
-                client.send_cip_udp(
-                    craft_class0_modeless_packet(str(src_ip), str(cfg.dst_ip), random_application_data(8)))
+
+                pkt = craft_class0_modeless_packet(str(src_ip), str(cfg.dst_ip), random_application_data(8, 60))
+                client.send_cip_udp(pkt)
                 packet_count['success'] += 1
                 print(".", end="", flush=True)
             except Exception as e:
@@ -90,7 +91,8 @@ def generate_class1_traffic(cfg, verbose, src_ip, stop_event, session_duration):
         session_duration_seconds = session_duration * 60
         while not stop_event.is_set() and (time.time() - start_time) < session_duration_seconds and client is not None:
             try:
-                client.send_cip_udp(craft_class1_32bitheader_packet(src_ip, cfg.dst_ip, random_application_data(8)))
+                pkt = craft_class1_32bitheader_packet(src_ip, cfg.dst_ip, random_application_data(8,60))
+                client.send_cip_udp(pkt)
                 packet_count['success'] += 1
                 print(".", end="", flush=True)
             except Exception as e:
